@@ -5,11 +5,11 @@
 #include <math.h>
 
 #define MAX_SIZE 100
-#define ENABLE_JSON_DEBUGGING 1
+// #define ENABLE_JSON_DEBUGGING 1
 
 #ifndef __bool_true_false_are_defined
-#define true = 1
-#define false = 0
+#define true 1
+#define false 0
 typedef unsigned short int bool;
 #endif
 
@@ -19,7 +19,9 @@ typedef enum
   JSON_INT,
   JSON_FLOAT,
   JSON_STRING,
-  JSON_NULL
+  JSON_NULL,
+  JSON_OBJECT,
+  JSON_ARRAY
 } SimpleJSONParser_TokenType;
 
 typedef struct {
@@ -39,6 +41,7 @@ typedef enum
 {
   ReadingKey,
   ReadingValue,
+  ReadingArray,
   ExpectingKey,
   ExpectingValue,
   ExpectingColon,
@@ -46,6 +49,8 @@ typedef enum
   ExpectingBoolean,
   ExpectingNumber,
   ExpectingString,
+  ExpectingObject,
+  ExpectingArray,
   ExpectingNull,
   Error,
   None
@@ -56,9 +61,9 @@ bool is_number (char c) {
 }
 
 char* SimpleJSONParser_token_types[] = {"JSON_BOOLEAN", "JSON_INT", "JSON_FLOAT", "JSON_STRING", "JSON_NULL"};
-char *SimpleJSONParser_states[] = {"ReadingKey", "ReadingValue", "ExpectingKey", "ExpectingValue", "ExpectingColon", "ExpectingComma", "ExpectingBoolean", "ExpectingNumber", "ExpectingString", "ExpectingNull", "Error", "None"};
+char *SimpleJSONParser_states[] = {"ReadingKey", "ReadingValue", "ReadingArray", "ExpectingKey", "ExpectingValue", "ExpectingColon", "ExpectingComma", "ExpectingBoolean", "ExpectingNumber", "ExpectingString", "ExpectingObject", "ExpectingArray", "ExpectingNull", "Error", "None"};
 
-int SimpleJSONParser_tokenize(char *string, int start, JSONTokens *result, int tokens_length)
+int SimpleJSONParser_tokenize(char *string, int start, int end, JSONTokens *result, int tokens_length)
 {
   
   SimpleJSONParser_State state = None;
@@ -90,18 +95,32 @@ int SimpleJSONParser_tokenize(char *string, int start, JSONTokens *result, int t
 
   JSONToken *SimpleJSONParser_create_token(int start, int end, SimpleJSONParser_TokenType type)
   {
-    char *name = (char *)malloc((key_end - key_start + 2) * sizeof(char));
+    char *name = NULL;
+    if (key_start == -1 && key_end == -1) {
+      int digits = (int)log10(result->count + 1) + 1;
+      name = (char *)malloc((digits + 1) * sizeof(char));
+    }
+    else {
+      name = (char *)malloc((key_end - key_start + 2) * sizeof(char));
+    }
     JSONToken *token = (JSONToken *)malloc(sizeof(JSONToken));
     token->start = start;
     token->end = end;
     token->type = type;
     token->name = name;
     int x = 0;
-    for (int j = key_start; j <= key_end; j++, x++)
-    {
-      token->name[x] = string[j];
+    if (key_start == -1 && key_end == -1) {
+      int digits = (int)log10(result->count + 1) + 1;
+      sprintf(token->name, "%d", result->count);
+      token->name[digits] = '\0';
     }
-    token->name[key_end - key_start + 1] = '\0';
+    else {  
+      for (int j = key_start; j <= key_end; j++, x++)
+      {
+        token->name[x] = string[j];
+      }
+      token->name[key_end - key_start + 1] = '\0';
+    }
     return token;
   }
 
@@ -115,10 +134,16 @@ int SimpleJSONParser_tokenize(char *string, int start, JSONTokens *result, int t
         is_float = true;
       if (string[i + 1] == ',')
         substate = ExpectingComma;
-      if (string[i] == ',')
+      if (string[i] == ',' || string[i] == ']')
       {
-        state = None;
-        substate = ExpectingKey;
+        if (state != ReadingArray) {
+          state = None;
+          substate = ExpectingKey;
+        }
+        else {
+          state = ReadingArray;
+          substate = ExpectingComma;
+        }
         break;
       }
       SimpleJSONParser_increment_i(1);
@@ -139,7 +164,7 @@ int SimpleJSONParser_tokenize(char *string, int start, JSONTokens *result, int t
     {
       if (string[i] == '"' && string[i - 1] != '\\')
       {
-        state = None;
+        if (state != ReadingArray) state = None;
         substate = ExpectingComma;
         break;
       }
@@ -155,7 +180,7 @@ int SimpleJSONParser_tokenize(char *string, int start, JSONTokens *result, int t
     {
       JSONToken *token = SimpleJSONParser_create_token(i, i + 3, JSON_BOOLEAN);
       SimpleJSONParser_add_token(token);
-      state = None;
+      if (state != ReadingArray) state = None;
       substate = ExpectingComma;
       SimpleJSONParser_increment_i(3);
     }
@@ -163,7 +188,8 @@ int SimpleJSONParser_tokenize(char *string, int start, JSONTokens *result, int t
     {
       JSONToken *token = SimpleJSONParser_create_token(i, i + 4, JSON_BOOLEAN);
       SimpleJSONParser_add_token(token);
-      state = None;
+      if (state != ReadingArray)
+        state = None;
       substate = ExpectingComma;
       SimpleJSONParser_increment_i(4);
     }
@@ -175,17 +201,49 @@ int SimpleJSONParser_tokenize(char *string, int start, JSONTokens *result, int t
     {
       JSONToken *token = SimpleJSONParser_create_token(i, i + 3, JSON_NULL);
       SimpleJSONParser_add_token(token);
-      state = None;
+      if (state != ReadingArray)
+        state = None;
       substate = ExpectingComma;
       SimpleJSONParser_increment_i(3);
     }
   }
 
-  for (; i < strlen(string); SimpleJSONParser_increment_i(1))
+  void handle_object () {
+    int obj_start = i;
+    while (1) {
+      if (string[i] == '}') {
+        JSONToken *token = SimpleJSONParser_create_token(obj_start, i, JSON_OBJECT);
+        SimpleJSONParser_add_token(token);
+        if (state != ReadingArray)
+          state = None;
+        substate = ExpectingComma;
+        break;
+      }
+      SimpleJSONParser_increment_i(1);
+    }
+  }
+
+  void handle_array () {
+    int arr_start = i;
+    while (1) {
+      if (string[i] == ']') {
+        JSONToken *token = SimpleJSONParser_create_token(arr_start, i, JSON_ARRAY);
+        SimpleJSONParser_add_token(token);
+        if (state != ReadingArray)
+          state = None;
+
+        substate = ExpectingComma;
+        break;
+      }
+      SimpleJSONParser_increment_i(1);
+    } 
+  }
+
+  for (; i <= end; SimpleJSONParser_increment_i(1))
   {
     char c = string[i];
 
-    if (c == ' ' && state != ReadingValue) continue;
+    if (c == ' ' && state != ReadingValue && state != ReadingArray) continue;
 
     if (c == '"') {
       if (substate == ExpectingKey) {
@@ -213,8 +271,16 @@ int SimpleJSONParser_tokenize(char *string, int start, JSONTokens *result, int t
       substate = ExpectingValue;
     }
 
-    if (c == ',' && substate == ExpectingComma) {
+    if (c == ',' && state != ReadingArray && substate == ExpectingComma) {
       substate = ExpectingKey;
+    }
+
+    if (c == '[' && state == None && substate == ExpectingKey && result->count == 0)
+    {
+      state = ReadingArray;
+      substate = None; 
+      SimpleJSONParser_increment_i(1);
+      c = string[i];
     }
 
     if (substate == ExpectingValue) {
@@ -234,6 +300,69 @@ int SimpleJSONParser_tokenize(char *string, int start, JSONTokens *result, int t
         substate = ExpectingNumber;
         handle_number();
       }
+      else if (c == '{') {
+        state = ReadingValue;
+        substate = ExpectingObject;
+        handle_object();
+      }
+      else if (c == '[') {
+        state = ReadingValue,
+        substate = ExpectingArray;
+        handle_array();
+      }
+    }
+  
+    if (state == ReadingArray) {
+      if (c == ' ' && state != ExpectingString) {
+        continue;
+      }
+      if (c == '"') {
+        if (substate == ExpectingComma) {
+          state = ReadingArray;
+          substate = ExpectingString;
+          handle_string();
+        }
+      }
+      if (c == 't' || c == 'f') {
+        state = ReadingArray;
+        substate = ExpectingBoolean;
+        key_start = -1;
+        key_end = -1;
+        handle_boolean();
+      }
+      else if (c == 'n')
+      {
+        state = ReadingArray;
+        substate = ExpectingNull;
+        key_start = -1;
+        key_end = -1;
+        handle_null();
+      }
+      else if (is_number(c)) {
+        state = ReadingArray;
+        substate = ExpectingNumber;
+        key_start = -1;
+        key_end = -1;
+        handle_number();
+      }
+      else if (c == '{') {
+        state = ReadingArray;
+        substate = ExpectingObject;
+        key_start = -1;
+        key_end = -1;
+        handle_object();
+      }
+      else if (c == '[') {
+        state = ReadingArray,
+        substate = ExpectingArray;
+        key_start = -1;
+        key_end = -1;
+        handle_array();
+      }
+      else if (c == ']') {
+        state = None;
+        substate = ExpectingComma;
+      }
     }
   }
 }
@@ -244,7 +373,16 @@ JSONTokens *parse_json(char *string)
   JSONTokens *result = (JSONTokens *)malloc(sizeof(JSONTokens));
   result->tokens = NULL;
   result->count = 0;
-  SimpleJSONParser_tokenize(string, 0, result, 0);
+  SimpleJSONParser_tokenize(string, 0, strlen(string) - 1, result, 0);
+  return result;
+}
+
+JSONTokens* parse_json_with_limits(char* string, int start, int end) {
+  if (string == NULL) return NULL;
+  JSONTokens *result = (JSONTokens *)malloc(sizeof(JSONTokens));
+  result->tokens = NULL;
+  result->count = 0;
+  SimpleJSONParser_tokenize(string, start, end, result, 0);
   return result;
 }
 
@@ -266,6 +404,24 @@ char *parse_token_str(JSONToken* token, char* json_string) {
     return NULL;
   }
   return parse_token(token, json_string);
+}
+
+JSONTokens* parse_token_obj(JSONToken* token, char* json_string) {
+  if (token->type != JSON_OBJECT) {
+    printf("Ivalid JSON Token Type. Expected JSON_OBJECT. Got %s", SimpleJSONParser_token_types[token->type]);
+    return NULL;
+  }
+  return parse_json_with_limits(json_string, token->start, token->end);
+}
+
+JSONTokens *parse_token_arr(JSONToken *token, char *json_string)
+{
+  if (token->type != JSON_ARRAY)
+  {
+    printf("Ivalid JSON Token Type. Expected JSON_ARRAY. Got %s", SimpleJSONParser_token_types[token->type]);
+    return NULL;
+  }
+  return parse_json_with_limits(json_string, token->start, token->end);
 }
 
 int parse_token_int(JSONToken* token, char* json_string)
@@ -305,7 +461,7 @@ void* parse_token_null(JSONToken* token, char* json_string)
 }
 
 
-JSONToken* get_token (char* name, JSONTokens* result) {
+JSONToken* get_token_by_key (char* name, JSONTokens* result) {
   for (int i = 0; i < result->count; i++) {
     if (strcmp(name, result->tokens[i]->name) == 0) {
       return result->tokens[i];
@@ -313,3 +469,26 @@ JSONToken* get_token (char* name, JSONTokens* result) {
   }
   return NULL;
 }
+
+JSONToken *get_token_by_index(int index, JSONTokens *result)
+{
+  int digits = (int)log10(result->count) + 1;
+  char name[digits + 1];
+  sprintf(name, "%d", index);
+  name[digits] = '\0';
+  for (int i = 0; i < result->count; i++)
+  {
+
+    if (strcmp(name, result->tokens[i]->name) == 0)
+    {
+      return result->tokens[i];
+    }
+  }
+  return NULL;
+}
+
+// done
+#define get_token(name, result) _Generic((name), \
+    int: get_token_by_index,                         \
+    char*: get_token_by_key                     \
+)(name, result)
