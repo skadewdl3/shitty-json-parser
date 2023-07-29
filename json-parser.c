@@ -6,11 +6,17 @@ int main () {
 
   JSONTokens* result = parse_json(json_string);
 
-  JSONTokens* marks = get_value_arr("marks", result, json_string);
+  JSONTokens* dob = get_value_obj("dob", result, json_string);
 
-  for (int i = 0; i < marks->count; i++) {
-    printf("%f\n", get_value_float(i, marks, json_string));
-  }
 
+  char* name = get_value_str("name", result, json_string);
+  int day = get_value_int("date", dob, json_string);
+  char* month = get_value_str("month", dob, json_string);
+  int year = get_value_int("year", dob, json_string);
+  printf("%s was born on %d %s %d.\n", name, day, month, year);
+
+
+  free(name);
+  free(month);
   free(result);
 }

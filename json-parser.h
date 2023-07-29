@@ -6,7 +6,6 @@
 #include <stdarg.h>
 
 #define MAX_SIZE 100
-// #define ENABLE_JSON_DEBUGGING 1
 
 #ifndef __bool_true_false_are_defined
 #define true 1
@@ -88,7 +87,7 @@ int SimpleJSONParser_tokenize(char *string, int start, int end, JSONTokens *resu
 
   void SimpleJSONParser_increment_i(int val)
   {
-    #ifndef ENABLE_JSON_DEBUGGING
+    #ifdef ENABLE_JSON_DEBUGGING
     printf("%c: %s - %s\n", string[i], SimpleJSONParser_states[state], SimpleJSONParser_states[substate]);
     #endif
     i += val;
@@ -615,9 +614,9 @@ char* format_json (char* format_string, ...) {
     char*: get_value_by_key_float                     \
 )(name, result, json_string)
 
-#define get_value_string(name, result, json_string) _Generic((name), \
-    int: get_value_by_index_string,                     \
-    char *: get_value_by_key_string)(name, result, json_string)
+#define get_value_str(name, result, json_string) _Generic((name), \
+    int: get_value_by_index_str,                     \
+    char *: get_value_by_key_str)(name, result, json_string)
 
 #define get_value_bool(name, result, json_string) _Generic((name), \
     int: get_value_by_index_bool,                     \
