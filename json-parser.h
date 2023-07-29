@@ -134,7 +134,7 @@ int SimpleJSONParser_tokenize(char *string, int start, int end, JSONTokens *resu
         is_float = true;
       if (string[i + 1] == ',')
         substate = ExpectingComma;
-      if (string[i] == ',' || string[i] == ']')
+      if (string[i] == ',' || string[i] == ']' || string[i] == '}')
       {
         if (state != ReadingArray) {
           state = None;
