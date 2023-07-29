@@ -504,6 +504,7 @@ int get_value_by_key_int (char* name, JSONTokens* result, char* json_string) {
 float get_value_by_key_float(char *name, JSONTokens *result, char* json_string)
 {
   JSONToken *token = get_token_by_key(name, result);
+  if (token->type == JSON_INT) return 1.0 * parse_token_int(token, json_string);
   return parse_token_float(token, json_string);
 }
 
@@ -552,6 +553,7 @@ int get_value_by_index_int(int index, JSONTokens *result, char* json_string)
 float get_value_by_index_float(int index, JSONTokens *result, char* json_string)
 {
   JSONToken *token = get_token_by_index(index, result);
+  if (token->type == JSON_INT) return 1.0 * parse_token_int(token, json_string);
   return parse_token_float(token, json_string);
 }
 
