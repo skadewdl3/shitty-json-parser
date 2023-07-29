@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <math.h>
+#include <stdarg.h>
 
 #define MAX_SIZE 100
 // #define ENABLE_JSON_DEBUGGING 1
@@ -406,6 +407,14 @@ char *parse_token_str(JSONToken* token, char* json_string) {
   return parse_token(token, json_string);
 }
 
+char parse_token_char(JSONToken* token, char* json_string) {
+  if (token->type != JSON_STRING) {
+    printf("Ivalid JSON Token Type. Expected JSON_STRING. Got %s", SimpleJSONParser_token_types[token->type]);
+    return '\0';
+  }
+  return parse_token(token, json_string)[0];
+}
+
 JSONTokens* parse_token_obj(JSONToken* token, char* json_string) {
   if (token->type != JSON_OBJECT) {
     printf("Ivalid JSON Token Type. Expected JSON_OBJECT. Got %s", SimpleJSONParser_token_types[token->type]);
@@ -485,6 +494,18 @@ JSONToken *get_token_by_index(int index, JSONTokens *result)
     }
   }
   return NULL;
+}
+
+char* format_json (char* format_string, ...) {
+  char* temp = (char*)malloc(sizeof(char) * 1000);
+  va_list arguments;
+  va_start(arguments, format_string);
+  vsprintf(temp, format_string, arguments);
+  va_end(arguments);
+  size_t length = strlen(temp);
+  temp = realloc(temp, sizeof(char) * (length + 1));
+  temp[length] = '\0';
+  return temp;
 }
 
 // done
