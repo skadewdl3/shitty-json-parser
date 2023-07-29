@@ -2,11 +2,15 @@
 #include <stdio.h>
 
 int main () {
-  char json_string2[] = "{\"operator\": \"+\", \"operand1\": 2.3, \"operand2\": 4.6}";
-  
-  JSONTokens* result = parse_json(json_string2);
+  char json_string[] = "{\"name\":\"Soham K\", \"dob\": {\"date\": 11, \"month\": \"June\", \"year\": 2004}, \"dumb\": true, \"knowledge\": null, \"marks\": [10, 20, 30]}";
 
-  printf("\n%f", parse_token_float(get_token("operand1", result), json_string2));
+  JSONTokens* result = parse_json(json_string);
+
+  JSONTokens* marks = get_value_arr("marks", result, json_string);
+
+  for (int i = 0; i < marks->count; i++) {
+    printf("%d\n", get_value_int(i, marks, json_string));
+  }
 
   free(result);
 }

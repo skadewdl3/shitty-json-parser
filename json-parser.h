@@ -496,6 +496,101 @@ JSONToken *get_token_by_index(int index, JSONTokens *result)
   return NULL;
 }
 
+int get_value_by_key_int (char* name, JSONTokens* result, char* json_string) {
+  JSONToken* token = get_token_by_key(name, result);
+  return parse_token_int(token, json_string);
+}
+
+float get_value_by_key_float(char *name, JSONTokens *result, char* json_string)
+{
+  JSONToken *token = get_token_by_key(name, result);
+  return parse_token_float(token, json_string);
+}
+
+char* get_value_by_key_str(char *name, JSONTokens *result, char* json_string)
+{
+  JSONToken *token = get_token_by_key(name, result);
+  return parse_token_str(token, json_string);
+}
+
+int get_value_by_key_bool(char *name, JSONTokens *result, char* json_string)
+{
+  JSONToken *token = get_token_by_key(name, result);
+  return parse_token_bool(token, json_string);
+}
+
+char get_value_by_key_char(char *name, JSONTokens *result, char* json_string)
+{
+  JSONToken *token = get_token_by_key(name, result);
+  return parse_token_char(token, json_string);
+}
+
+void* get_value_by_key_null(char *name, JSONTokens *result, char* json_string)
+{
+  JSONToken *token = get_token_by_key(name, result);
+  return NULL;
+}
+
+JSONTokens* get_value_by_key_obj(char *name, JSONTokens *result, char* json_string)
+{
+  JSONToken *token = get_token_by_key(name, result);
+  return parse_token_obj(token, json_string);
+}
+
+JSONTokens* get_value_by_key_arr(char *name, JSONTokens *result, char* json_string)
+{
+  JSONToken *token = get_token_by_key(name, result);
+  return parse_token_arr(token, json_string);
+}
+
+int get_value_by_index_int(int index, JSONTokens *result, char* json_string)
+{
+  JSONToken *token = get_token_by_index(index, result);
+  return parse_token_int(token, json_string);
+}
+
+float get_value_by_index_float(int index, JSONTokens *result, char* json_string)
+{
+  JSONToken *token = get_token_by_index(index, result);
+  return parse_token_float(token, json_string);
+}
+
+char *get_value_by_index_str(int index, JSONTokens *result, char* json_string)
+{
+  JSONToken *token = get_token_by_index(index, result);
+  return parse_token_str(token, json_string);
+}
+
+int get_value_by_index_bool(int index, JSONTokens *result, char* json_string)
+{
+  JSONToken *token = get_token_by_index(index, result);
+  return parse_token_bool(token, json_string);
+}
+
+char get_value_by_index_char(int index, JSONTokens *result, char* json_string)
+{
+  JSONToken *token = get_token_by_index(index, result);
+  return parse_token_char(token, json_string);
+}
+
+void *get_value_by_index_null(int index, JSONTokens *result, char* json_string)
+{
+  JSONToken *token = get_token_by_index(index, result);
+  return NULL;
+}
+
+JSONTokens *get_value_by_index_obj(int index, JSONTokens *result, char* json_string)
+{
+  JSONToken *token = get_token_by_index(index, result);
+  return parse_token_obj(token, json_string);
+}
+
+JSONTokens *get_value_by_index_arr(int index, JSONTokens *result, char* json_string)
+{
+  JSONToken *token = get_token_by_index(index, result);
+  return parse_token_arr(token, json_string);
+}
+
 char* format_json (char* format_string, ...) {
   char* temp = (char*)malloc(sizeof(char) * 1000);
   va_list arguments;
@@ -509,7 +604,35 @@ char* format_json (char* format_string, ...) {
 }
 
 // done
-#define get_token(name, result) _Generic((name), \
-    int: get_token_by_index,                         \
-    char*: get_token_by_key                     \
-)(name, result)
+#define get_value_int(name, result, json_string) _Generic((name), \
+    int: get_value_by_index_int,                                  \
+    char *: get_value_by_key_int)(name, result, json_string)
+
+#define get_value_float(name, result, json_string) _Generic((name), \
+    int: get_value_by_index_float,                         \
+    char*: get_value_by_key_float                     \
+)(name, result, json_string)
+
+#define get_value_string(name, result, json_string) _Generic((name), \
+    int: get_value_by_index_string,                     \
+    char *: get_value_by_key_string)(name, result, json_string)
+
+#define get_value_bool(name, result, json_string) _Generic((name), \
+    int: get_value_by_index_bool,                     \
+    char *: get_value_by_key_bool)(name, result, json_string)
+
+#define get_value_char(name, result, json_string) _Generic((name), \
+    int: get_value_by_index_char,                     \
+    char *: get_value_by_key_char)(name, result, json_string)
+
+#define get_value_null(name, result, json_string) _Generic((name), \
+    int: get_value_by_index_null,                     \
+    char *: get_value_by_key_int)(name, result, json_string)
+
+#define get_value_obj(name, result, json_string) _Generic((name), \
+    int: get_value_by_index_obj,                     \
+    char *: get_value_by_key_obj)(name, result, json_string)
+
+#define get_value_arr(name, result, json_string) _Generic((name), \
+    int: get_value_by_index_arr,                     \
+    char *: get_value_by_key_arr)(name, result, json_string)
