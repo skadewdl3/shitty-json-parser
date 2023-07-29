@@ -296,7 +296,7 @@ int SimpleJSONParser_tokenize(char *string, int start, int end, JSONTokens *resu
         substate = ExpectingNull;
         handle_null();
       }
-      else if (is_number(c)) {
+      else if (is_number(c) || (c == '-' && is_number(string[i + 1]))) {
         state = ReadingValue;
         substate = ExpectingNumber;
         handle_number();
@@ -339,7 +339,7 @@ int SimpleJSONParser_tokenize(char *string, int start, int end, JSONTokens *resu
         key_end = -1;
         handle_null();
       }
-      else if (is_number(c)) {
+      else if (is_number(c) || (c == '-' && is_number(string[i + 1]))) {
         state = ReadingArray;
         substate = ExpectingNumber;
         key_start = -1;

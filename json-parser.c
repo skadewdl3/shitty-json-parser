@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 int main () {
-  char json_string[] = "{\"name\":\"Soham K\", \"dob\": {\"date\": 11, \"month\": \"June\", \"year\": 2004}, \"dumb\": true, \"knowledge\": null, \"marks\": [10, 20, 30]}";
+  char json_string[] = "{\"name\":\"Soham K\", \"dob\": {\"date\": 11, \"month\": \"June\", \"year\": 2004}, \"dumb\": true, \"knowledge\": null, \"marks\": [-10, 20, 30]}";
 
   JSONTokens* result = parse_json(json_string);
 
