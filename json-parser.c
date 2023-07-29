@@ -20,3 +20,4 @@ int main () {
   free(month);
   free(result);
 }
+
